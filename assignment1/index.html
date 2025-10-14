@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Assignment 1 – David Zhou</title>
+
+    <link rel="stylesheet" type="text/css" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <script src="libraries/p5.min.js"></script>
+    <script src="libraries/p5.sound.min.js"></script>
+  </head>
+
+  <body class="font-mono">
+    <header class="flex flex-col items-center justify-center min-h-screen bg-yellow-200">
+        <h1 class="text-4xl sm:text-6xl md:text-8xl font-bold animate-pulse">Assignment 1</h1>
+        <h3 class="mt-4 md:mt-8 text-xl md:text-2xl font-medium text-yellow-700">David Zhou</h3>
+    </header>
+
+    <!-- <main class="flex flex-col items-center justify-center min-h-screen p-16"> -->
+    <main class="flex flex-col items-center justify-center min-h-screen p-8 md:p-32 md:py-16">
+        <span class="mb-8">
+            <input type="checkbox" id="round-results" name="round-results" value="true">
+            <label for="round-results">Show rounded results</label>
+        </span>
+        <div id="grid" class="grid grid-cols-1 xl:grid-cols-2 gap-8 w-full">
+        <!-- <div id="grid" class="flex flex-wrap justify-center gap-8 w-full"> -->
+            <!-- <div id="mean-first-column" class="group hover:text-neutral-700 outline outline-neutral-400 hover:outline-neutral-700 ease-out duration-400 hover:scale-102 px-8 py-5 rounded-xl bg-neutral-50 hover:bg-white">
+                <h3 class="text-xl text-neutral-500 group-hover:text-neutral-700 duration-400 ease-out/75"><span class="group-hover:underline">Mean</span> of 1st column</h3>
+            </div> -->
+            <!-- <div id="mean-first-column" class="basis-full md:basis-[calc(50%-1rem)] group hover:text-neutral-700 outline outline-neutral-400 hover:outline-neutral-700 ease-out duration-400 px-8 py-5 rounded-xl hover:bg-white">
+                <div class="flex justify-between">
+                    <h3 class="text-xl text-neutral-500 group-hover:text-neutral-700 duration-400 ease-out"><span class="group-hover:underline">Mean</span> of 1st column</h3>
+                    <p class="text-xl hidden group-hover:block group-hover:text-neutral-700 font-bold duration-400 ease-out">100</p>
+                </div>
+            </div> -->
+        </div>
+    </main>
+
+    <script src="sketch.js"></script>
+  </body>
+</html>
