@@ -1,0 +1,86 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  height: 100%;
+  font-family: 'Inconsolata', monospace;
+}
+
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+
+.hamburger-menu {
+  width: 35px;
+  height: 35px;
+  background: white;
+  border: 2px solid black;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 6px;
+  position: fixed;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.3s ease;
+}
+
+.hamburger-menu:hover {
+  background: black;
+}
+
+.menu-line {
+  width: 20px;
+  height: 2px;
+  background: black;
+  border-radius: 1px;
+  transition: all 0.3s ease;
+}
+
+.hamburger-menu:hover .menu-line {
+  background: white;
+}
+
+.dropdown-menu {
+  width: 200px;
+  max-height: 200px;
+  background: white;
+  border: 2px solid black;
+  border-radius: 8px;
+  position: fixed;
+  overflow-y: auto;
+  z-index: 999;
+  padding: 5px 0;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.country-item {
+  padding: 12px 15px;
+  border-bottom: 1px solid #ddd;
+  background: white;
+  font-family: 'Inconsolata', monospace;
+  font-size: 14px;
+  cursor: default;
+  transition: all 0.2s ease;
+}
+
+.country-item:last-child {
+  border-bottom: none;
+}
+
+.country-item:hover {
+  background: #f0f0f0;
+  padding-left: 20px;
+}
