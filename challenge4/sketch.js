@@ -3,6 +3,7 @@ let minX, maxX, minY, maxY, minZ, maxZ;
 let rangeX, rangeY, rangeZ, maxRange;
 let minTimestamp, maxTimestamp;
 let worldSize;
+let maxSteps;
 
 // UI elements
 let menuDiv, menuHeight, menuMarginX;
@@ -11,6 +12,8 @@ let droneSelect;
 let showReferenceAxes = false;
 let axesCheckbox;
 let font;
+let syncDrones = false; // Set to true to sync drones by step index
+let syncCheckbox;
 
 // Animation control
 let playPauseButton;
@@ -49,6 +52,7 @@ function setup() {
     maxRange = max(rangeX, rangeY, rangeZ);
 
     // * Define time boundaries *
+    maxSteps = max(droneAlfa.getRowCount(), droneBravo.getRowCount(), droneCharlie.getRowCount());
     ({ min: minTimestamp, max: maxTimestamp } = getMinMaxValues("timestamp"));
 
     console.log(`Timestamp - Min: ${minTimestamp}, Max: ${maxTimestamp}`);
@@ -76,14 +80,15 @@ function setup() {
         .style("display", "flex")
         .style("align-items", "center");
 
-    /* Old slider setup based on step count
-    let maxSteps = max(droneAlfa.getRowCount(), droneBravo.getRowCount(), droneCharlie.getRowCount());
-    timeSlider = createSlider(0, maxSteps - 1, 0, 1).position(80, height - 80).style("width", width - 160 + "px");*/
-
-    // The step size is set to 0 to allow for floating point values
-    timeSlider = createSlider(minTimestamp, maxTimestamp, minTimestamp, 0)
-        //.position(menuMarginX / 2, height - menuHeight * 0.6)
-        //.style("width", width - menuMarginX + "px");
+    if (syncDrones) {
+        timeSlider = createSlider(0, maxSteps - 1, 0, 0)
+            //.position(80, height - 80).style("width", width - 160 + "px");
+    } else { 
+        // The step size is set to 0 to allow for floating point values
+        timeSlider = createSlider(minTimestamp, maxTimestamp, minTimestamp, 0)
+            //.position(menuMarginX / 2, height - menuHeight * 0.6)
+            //.style("width", width - menuMarginX + "px");
+    }
 
     droneSelect = createRadio("droneSelector");
     droneSelect.option("all", "All drones");
@@ -93,6 +98,18 @@ function setup() {
     droneSelect.selected("all");    // Default
     droneSelect.style("display", "flex");
     //droneSelect.position(menuMarginX / 2, height - menuHeight * 0.4);
+
+    syncCheckbox = createCheckbox("Sync Drones", syncDrones);
+    syncCheckbox.changed(updateSyncMode);
+
+    axesCheckbox = createCheckbox("Show Reference Axes", false);
+    axesCheckbox.changed(toggleAxes);
+
+    let checkboxesDiv = createDiv();
+    checkboxesDiv.style("display", "flex");
+    checkboxesDiv.style("gap", "10px");
+    checkboxesDiv.child(syncCheckbox);
+    checkboxesDiv.child(axesCheckbox);
 
     // * New Play/Pause Button *
 
@@ -108,15 +125,12 @@ function setup() {
     speedRadio.changed(updateSpeed);
     speedRadio.style("display", "flex");
 
-    axesCheckbox = createCheckbox("Show Reference Axes", false);
-    axesCheckbox.changed(toggleAxes);
-
     let otherSettings = createDiv();
     otherSettings.style("display", "flex");
     otherSettings.style("justify-content", "space-between");
     otherSettings.style("gap", "10px");
-    otherSettings.child(droneSelect)
-    otherSettings.child(axesCheckbox);
+    otherSettings.child(droneSelect);
+    otherSettings.child(checkboxesDiv);
 
     timeControlDiv.child(playPauseButton);
     timeControlDiv.child(timeSlider);
@@ -133,16 +147,29 @@ function draw() {
 
     // Handle animation playback
     if (isPlaying) {
-        // Assuming timestamps are in seconds, deltaTime is in milliseconds
-        let timeIncrement = (deltaTime / 1000.0) * speedMultiplier;
-        let newTimestamp = timeSlider.value() + timeIncrement;
+        if (syncDrones) {
+            let baselineStepsPerSecond = 70;
+            let stepIncrement = (deltaTime / 1000.0) * baselineStepsPerSecond * speedMultiplier; // Convert deltaTime to seconds
+            let newStep = timeSlider.value() + stepIncrement;
 
-        // Loop animation
-        if (newTimestamp > maxTimestamp) {
-            newTimestamp = minTimestamp;
+            // Loop animation
+            if (newStep >= maxSteps - 1) {
+                newStep = 0;
+            }
+
+            timeSlider.value(newStep); // Use floor to get integer step index
+        } else {
+            // Assuming timestamps are in seconds, deltaTime is in milliseconds
+            let timeIncrement = (deltaTime / 1000.0) * speedMultiplier;
+            let newTimestamp = timeSlider.value() + timeIncrement;
+
+            // Loop animation
+            if (newTimestamp > maxTimestamp) {
+                newTimestamp = minTimestamp;
+            }
+            
+            timeSlider.value(newTimestamp);
         }
-        
-        timeSlider.value(newTimestamp);
     }
     
     if (mouseY < height - menuHeight) {
@@ -165,19 +192,35 @@ function draw() {
     let selected = droneSelect.value();
     let currentStep = timeSlider.value();
 
+    if (syncDrones && isPlaying) {
+        console.log(currentStep);
+    }
+
     if (selected === "all" || selected === "alfa") {
         drawDronePath(droneAlfa, "cyan");
-        drawDroneAtStep(droneAlfa, currentStep, "darkcyan");
+        if (syncDrones) {
+            drawDroneAtStep(droneAlfa, currentStep, "darkcyan");
+        } else {
+            drawDroneAtTimestamp(droneAlfa, currentStep, "darkcyan");
+        }
     }
 
     if (selected === "all" || selected === "bravo") {
         drawDronePath(droneBravo, "magenta");
-        drawDroneAtStep(droneBravo, currentStep, "darkmagenta");
+        if (syncDrones) {
+            drawDroneAtStep(droneBravo, currentStep, "darkmagenta");
+        } else {
+            drawDroneAtTimestamp(droneBravo, currentStep, "darkmagenta");
+        }
     }
 
     if (selected === "all" || selected === "charlie") {
         drawDronePath(droneCharlie, "gold");
-        drawDroneAtStep(droneCharlie, currentStep, "darkgoldenrod");
+        if (syncDrones) {
+            drawDroneAtStep(droneCharlie, currentStep, "darkgoldenrod");
+        } else {
+            drawDroneAtTimestamp(droneCharlie, currentStep, "darkgoldenrod");
+        }
     }
 
     //noLoop();
@@ -219,22 +262,110 @@ function drawDronePath(droneData, color) {
     pop();
 }
 
-/*function drawDroneAtStep(droneData, step, color) {
-    if (step >= droneData.getRowCount()) return;
+function drawDroneAtStep(droneData, step, color) {
+    let prevStep = Math.floor(step);
+    let nextStep = prevStep + 1;
+    let t = step - prevStep;
 
-    let x = map(droneData.getNum(step, "x_pos"), minX, maxX, -200 * (rangeX / maxRange), 200 * (rangeX / maxRange))
-    let y = map(droneData.getNum(step, "y_pos"), minY, maxY, -200 * (rangeY / maxRange), 200 * (rangeY / maxRange));
-    let z = map(droneData.getNum(step, "z_pos"), minZ, maxZ, -200 * (rangeZ / maxRange), 200 * (rangeZ / maxRange));
+    prevStep = constrain(prevStep, 0, droneData.getRowCount() - 1);
+    nextStep = constrain(nextStep, 0, droneData.getRowCount() - 1);
+
+    let x_pos_prev = droneData.getNum(prevStep, "x_pos");
+    let y_pos_prev = droneData.getNum(prevStep, "y_pos");
+    let z_pos_prev = droneData.getNum(prevStep, "z_pos");
+    let x_vel_prev = droneData.getNum(prevStep, "x_vel");
+    let y_vel_prev = droneData.getNum(prevStep, "y_vel");
+
+    let x_pos_next = droneData.getNum(nextStep, "x_pos");
+    let y_pos_next = droneData.getNum(nextStep, "y_pos");
+    let z_pos_next = droneData.getNum(nextStep, "z_pos");
+    let x_vel_next = droneData.getNum(nextStep, "x_vel");
+    let y_vel_next = droneData.getNum(nextStep, "y_vel");
+
+    let x_pos = lerp(x_pos_prev, x_pos_next, t);
+    let y_pos = lerp(y_pos_prev, y_pos_next, t);
+    let z_pos = lerp(z_pos_prev, z_pos_next, t);
+    let x_vel = lerp(x_vel_prev, x_vel_next, t);
+    let z_vel = lerp(y_vel_prev, y_vel_next, t);
+
+    //let x_vel = droneData.getNum(step, "x_vel");
+    //let z_vel = droneData.getNum(step, "y_vel");
+    let y_vel = 0;
+
+    /*if (step > 0) {
+        let prevRow = step - 1;
+        let deltaZ = droneData.getNum(step, "z_pos") - droneData.getNum(prevRow, "z_pos");
+        let deltaTime = droneData.getNum(step, "timestamp") - droneData.getNum(prevRow, "timestamp");
+        if (deltaTime > 0) y_vel = deltaZ / deltaTime;
+    }*/
+
+    if (prevStep > 0 && nextStep > prevStep) {
+        // Calculate y velocity based on change in altitude between prevStep and nextStep
+        
+        let prevDeltaZ = droneData.getNum(prevStep, "z_pos") - droneData.getNum(prevStep - 1, "z_pos");
+        let prevDeltaT = droneData.getNum(prevStep, "timestamp") - droneData.getNum(prevStep - 1, "timestamp");
+        let y_vel_prev_calc = (prevDeltaT > 0) ? prevDeltaZ / prevDeltaT : 0;
+        
+        let nextDeltaZ = droneData.getNum(nextStep, "z_pos") - droneData.getNum(nextStep - 1, "z_pos");
+        let nextDeltaT = droneData.getNum(nextStep, "timestamp") - droneData.getNum(nextStep - 1, "timestamp");
+        let y_vel_next_calc = (nextDeltaT > 0) ? nextDeltaZ / nextDeltaT : 0;
+        
+        y_vel = lerp(y_vel_prev_calc, y_vel_next_calc, t);
+
+    } else if (prevStep > 0) {
+        // Fallback if last step
+        let deltaZ = droneData.getNum(prevStep, "z_pos") - droneData.getNum(prevStep - 1, "z_pos");
+        let deltaTime = droneData.getNum(prevStep, "timestamp") - droneData.getNum(prevStep - 1, "timestamp");
+        if (deltaTime > 0) y_vel = deltaZ / deltaTime;
+    }
+
+    let totalSpeed = mag(x_vel, y_vel, z_vel);
+    let baseRadius = 10;
+    let speedFactor = 1 + totalSpeed * 0.5;
+    let radiusZ = baseRadius * speedFactor;
+    let radiusX = baseRadius / speedFactor;
+    let radiusY = baseRadius / speedFactor;
+
+    let yaw = atan2(x_vel, z_vel);
+    let horizontalSpeed = mag(x_vel, z_vel);
+    let pitch = atan2(-y_vel, horizontalSpeed);
+
+    /*let x = map(droneData.getNum(step, "x_pos"), minX, maxX, -worldSize * (rangeX / maxRange), worldSize * (rangeX / maxRange));
+    let y = map(droneData.getNum(step, "z_pos"), minY, maxY, worldSize * (rangeY / maxRange), -worldSize * (rangeY / maxRange));
+    let z = map(droneData.getNum(step, "y_pos"), minZ, maxZ, -worldSize * (rangeZ / maxRange), worldSize * (rangeZ / maxRange));*/
+
+    let x = map(x_pos, minX, maxX, -worldSize * (rangeX / maxRange), worldSize * (rangeX / maxRange));
+    let y = map(z_pos, minY, maxY, worldSize * (rangeY / maxRange), -worldSize * (rangeY / maxRange));
+    let z = map(y_pos, minZ, maxZ, -worldSize * (rangeZ / maxRange), worldSize * (rangeZ / maxRange));
+
+    /*let realX = droneData.getNum(step, "x_pos");
+    let realY_data = droneData.getNum(step, "y_pos");
+    let realZ_alt = droneData.getNum(step, "z_pos");
+    let label = `X: ${nfc(realX, 2)}\nY: ${nfc(realY_data, 2)}\nAlt: ${nfc(realZ_alt, 2)}`;*/
+    let label = `X: ${nfc(x_pos, 2)}\nY: ${nfc(y_pos, 2)}\nAlt: ${nfc(z_pos, 2)}`;
 
     push();
     translate(x, y, z);
+
+    push();
+    rotateY(yaw);
+    rotateX(pitch);
     fill(color);
     noStroke();
-    sphere(5);
+    ellipsoid(radiusX, radiusY, radiusZ);
     pop();
-}*/
 
-function drawDroneAtStep(droneData, timestamp, color) {
+    if (font) textFont(font);
+    textSize(8);
+    fill(0);
+    noStroke();
+    textAlign(CENTER, BOTTOM);
+    text(label, 0, -15);
+
+    pop();
+}
+
+function drawDroneAtTimestamp(droneData, timestamp, color) {
     let targetRow = 0;
 
     for (let r = 0; r < droneData.getRowCount(); r++) {
@@ -469,4 +600,23 @@ function drawReferenceAxes() {
 
 function toggleAxes() {
     showReferenceAxes = this.checked();
+}
+
+function updateSyncMode() {
+    syncDrones = this.checked();
+    timeSlider.remove();
+
+    if (syncDrones) {
+        timeSlider = createSlider(0, maxSteps - 1, 0, 0);
+    } else {
+        timeSlider = createSlider(minTimestamp, maxTimestamp, minTimestamp, 0);
+    }
+
+    timeSlider.style("width", 100 + "%");
+    timeControlDiv.child(timeSlider);
+
+    // Reorder children to keep layout
+    timeControlDiv.child(playPauseButton);
+    timeControlDiv.child(timeSlider);
+    timeControlDiv.child(speedRadio);
 }
