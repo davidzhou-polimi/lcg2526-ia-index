@@ -14,6 +14,8 @@ let axesCheckbox;
 let font;
 let syncDrones = false; // Set to true to sync drones by step index
 let syncCheckbox;
+let showDronePath = true;
+let dronePathCheckbox;
 
 // Animation control
 let playPauseButton;
@@ -102,6 +104,11 @@ function setup() {
     syncCheckbox = createCheckbox("Sync Drones", syncDrones);
     syncCheckbox.changed(updateSyncMode);
 
+    dronePathCheckbox = createCheckbox("Show Drone Path", showDronePath);
+    dronePathCheckbox.changed(() => {
+        showDronePath = dronePathCheckbox.checked();
+    });
+
     axesCheckbox = createCheckbox("Show Reference Axes", false);
     axesCheckbox.changed(toggleAxes);
 
@@ -109,6 +116,7 @@ function setup() {
     checkboxesDiv.style("display", "flex");
     checkboxesDiv.style("gap", "10px");
     checkboxesDiv.child(syncCheckbox);
+    checkboxesDiv.child(dronePathCheckbox);
     checkboxesDiv.child(axesCheckbox);
 
     // * New Play/Pause Button *
@@ -192,9 +200,9 @@ function draw() {
     let selected = droneSelect.value();
     let currentStep = timeSlider.value();
 
-    if (syncDrones && isPlaying) {
-        console.log(currentStep);
-    }
+    /*if (syncDrones && isPlaying) {
+        console.log(currentStep);
+    }*/
 
     if (selected === "all" || selected === "alfa") {
         drawDronePath(droneAlfa, "cyan");
@@ -245,6 +253,8 @@ function getMinMaxValues(columnName) {
 }
 
 function drawDronePath(droneData, color) {
+    if (!showDronePath) return;
+
     push();
     noFill();
     stroke(color);
