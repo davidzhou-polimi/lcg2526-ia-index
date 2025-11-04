@@ -103,7 +103,7 @@ class Player {
 class Fish {
     constructor() {
         this.size = random(20, player.size * 2 + 20); // Fish can be various sizes
-        this.speed = random(1, 3);
+        this.speed = random(1, 2);
 
         // Start fish off-screen
         let startOnLeft = random() > 0.5;
