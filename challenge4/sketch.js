@@ -156,7 +156,7 @@ function draw() {
     // Handle animation playback
     if (isPlaying) {
         if (syncDrones) {
-            let baselineStepsPerSecond = 70;
+            let baselineStepsPerSecond = 100;
             let stepIncrement = (deltaTime / 1000.0) * baselineStepsPerSecond * speedMultiplier; // Convert deltaTime to seconds
             let newStep = timeSlider.value() + stepIncrement;
 
